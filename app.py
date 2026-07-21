@@ -9,7 +9,6 @@ DB_FILE = "larix_database.json"
 class LarixServer(BaseHTTPRequestHandler):
     
     def render_html_page(self, results_html="", speed_metric="", query_val=""):
-        # PART 1: HTML Head and CSS Layout Styles
         return f"""
         <!DOCTYPE html>
         <html lang="en">
@@ -194,7 +193,7 @@ class LarixServer(BaseHTTPRequestHandler):
                     </div>
                     """
             else:
-                results_html = "<p style='text-align: center; color: #666;'>No matching curriculum references found in the local repository.</p>"
+                results_html = "<p style='text-align: center; color: #666;'>No matching references found in the repository.</p>"
                 
             response_content = self.render_html_page(results_html, speed_metric, query_val=params["query"])
         else:
@@ -203,9 +202,13 @@ class LarixServer(BaseHTTPRequestHandler):
         self.wfile.write(response_content.encode("utf-8"))
 
 if __name__ == "__main__":
-    PORT = 8080
-    server = HTTPServer(("localhost", PORT), LarixServer)
-    print(f"LARIX Website is running smoothly! Open your browser and go to: http://localhost:{PORT}")
+    # Dynamically bind to Render's required environment port or default to 10000
+    port_string = os.environ.get("PORT", "10000")
+    PORT = int(port_string)
+    
+    # Listen on 0.0.0.0 to accept traffic outside localhost
+    server = HTTPServer(("0.0.0.0", PORT), LarixServer)
+    print(f"LARIX Website is running smoothly on port {PORT}!")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
