@@ -116,13 +116,13 @@ class LarixServer(BaseHTTPRequestHandler):
                     <div class="team-member">
                         <div class="member-name">Sunshine M. Mertola</div>
                         <div class="member-role">Role: Data Organizer & Compiler</div>
-                        <div class="member-bio">Sunshine M. Mertola is a 16-year-old STEM student at Guisguis National High School. She helps collect academic materials online and specializes in sorting the files into their correct folders to make the database easy to browse.</div>
+                        <div class="member-bio">Sunshine M. Mertola is a 17-year-old STEM student at Guisguis National High School. She helps collect academic materials online and specializes in sorting the files into their correct folders to make the database easy to browse.</div>
                     </div>
                     
                     <div class="team-member">
                         <div class="member-name">Romnick M. Mayo</div>
                         <div class="member-role">Role: Data Organizer & Compiler</div>
-                        <div class="member-bio">Romnick M. Mayo is a 16-year-old STEM student at Guisguis National High School. He helps compile research links and works on formatting and cleaning up the text summaries before they are uploaded to the platform system.</div>
+                        <div class="member-bio">Romnick M. Mayo is a 17-year-old STEM student at Guisguis National High School. He helps compile research links and works on formatting and cleaning up the text summaries before they are uploaded to the platform system.</div>
                     </div>
                     
                     <div class="team-member">
