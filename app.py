@@ -79,7 +79,7 @@ class LarixServer(BaseHTTPRequestHandler):
                 
                 <form method="GET" action="/">
                     <div class="search-box">
-                        <input type="text" name="query" placeholder="Enter keyword (e.g., water pollution)..." value="{query_val}" required>
+                        <input type="text" name="query" placeholder="Enter keyword" value="{query_val}" required>
                         <button type="submit">Search</button>
                     </div>
                 </form>
