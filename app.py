@@ -110,3 +110,63 @@ class LarixServer(BaseHTTPRequestHandler):
             </div>
         </div>
     </div>
+    <div id="pwaBanner" class="pwa-banner">
+        <p class="pwa-text"><strong>LARIX Repository App</strong><br>Add to your homescreen for instant offline access.</p>
+        <button id="pwaInstallBtn" class="pwa-btn">Install</button>
+    </div>
+    <script>
+        function toggleSidebar(){{const s=document.getElementById('sidebar'),o=document.getElementById('sidebarOverlay');s.classList.toggle('active');o.style.display=s.classList.contains('active')?'block':'none'}}
+        function openAboutModal(){{document.getElementById('aboutModal').style.display='flex'}}
+        function closeAboutModal(){{document.getElementById('aboutModal').style.display='none'}}
+        function closeAboutModalOutside(e){{if(e.target.id==='aboutModal')closeAboutModal()}}
+        document.getElementById('searchForm').addEventListener('submit',function(){{const q=document.getElementById('searchInput').value.trim();if(q){{let h=JSON.parse(localStorage.getItem('larix_history')||'[]');if(!h.includes(q)){{h.unshift(q);if(h.length>5)h.pop();localStorage.setItem('larix_history',JSON.stringify(h))}}}}}});
+        function renderHistory(){{const l=document.getElementById('historyList'),h=JSON.parse(localStorage.getItem('larix_history')||'[]');if(h.length===0){{l.innerHTML='<p style="color:#aaa;font-style:italic;margin:5px 0;">No history recorded.</p>';return}}l.innerHTML=h.map(q=>`<a href="/?query=${{encodeURIComponent(q)}}" class="history-item">🔍 ${{q}}</a>`).join('')}}
+        function toggleSaveResearch(b,i,t,l){{let s=JSON.parse(localStorage.getItem('larix_saved')||'[]');const idx=s.findIndex(item=>item.id===i);if(idx>-1){{s.splice(idx,1);b.classList.remove('saved');b.innerHTML='☆'}}else{{s.push({{id:i,title:t,link:l}});b.classList.add('saved');b.innerHTML='★'}}localStorage.setItem('larix_saved',JSON.stringify(s));renderSavedList()}}
+        function renderSavedList(){{const l=document.getElementById('savedList'),s=JSON.parse(localStorage.getItem('larix_saved')||'[]');if(s.length===0){{l.innerHTML='<p style="color:#aaa;font-style:italic;margin:5px 0;">No saved researches yet.</p>';return}}l.innerHTML=s.map(item=>`<li class="saved-item"><a class="saved-item-link" href="${{item.link}}" target="_blank">${{item.title}}</a><span class="remove-saved" onclick="removeSavedItem('${{item.id}}')">✕ Remove</span></li>`).join('');document.querySelectorAll('.save-btn').forEach(btn=>{{const id=btn.getAttribute('data-id');if(s.some(item=>item.id===id)){{btn.classList.add('saved');btn.innerHTML='★'}}}})}}
+        function removeSavedItem(id){{let s=JSON.parse(localStorage.getItem('larix_saved')||'[]');s=s.filter(item=>item.id!==id);localStorage.setItem('larix_saved',JSON.stringify(s));renderSavedList()}}
+        function clearData(){{if(confirm("Are you sure you want to clear your local search history and favorites?")){{localStorage.removeItem('larix_history');localStorage.removeItem('larix_saved');renderHistory();renderSavedList()}}}}
+        let deferredPrompt;window.addEventListener('beforeinstallprompt',(e)=>{{e.preventDefault();deferredPrompt=e;document.getElementById('pwaBanner').style.display='flex'}});
+        document.getElementById('pwaInstallBtn').addEventListener('click',async()=>{{if(deferredPrompt){{deferredPrompt.prompt();const{{outcome}}=await deferredPrompt.userChoice;deferredPrompt=null;document.getElementById('pwaBanner').style.display='none'}}}});
+        window.addEventListener('DOMContentLoaded',()=>{{renderHistory();renderSavedList()}});
+    </script></body></html>"""
+        return html_top
+
+    def do_GET(self):
+        if self.path == "/logo.png":
+            if os.path.exists("logo.png"):
+                self.send_response(200)
+                self.send_header("Content-type", "image/png")
+                self.end_headers()
+                with open("logo.png", "rb") as f: self.wfile.write(f.read())
+                return
+        parsed_url = urllib.parse.urlparse(self.path)
+        params = urllib.parse.parse_qs(parsed_url.query)
+        self.send_response(200)
+        self.send_header("Content-type", "text/html; charset=utf-8")
+        self.end_headers()
+        if "query" in params:
+            user_query = params["query"].strip().lower()
+            start_time = time.perf_counter()
+            matched_items = []
+            if os.path.exists(DB_FILE):
+                with open(DB_FILE, "r", encoding="utf-8") as f: database = json.load(f)
+                for index, entry in enumerate(database):
+                    entry["id"] = f"doc_{index}"
+                    if user_query in entry["keyword"] or user_query in entry["title"].lower(): matched_items.append(entry)
+            retrieval_speed = time.perf_counter() - start_time
+            speed_metric = f'<div class="metrics">LARIX Performance Metrics: Found {len(matched_items)} result(s) in {retrieval_speed:.6f} seconds.</div>'
+            results_html = ""
+            if matched_items:
+                for item in matched_items:
+                    escaped_title = item['title'].replace("'", "\\'").replace('"', '\\"')
+                    results_html += f"""<div class="result-card"><button class="save-btn" data-id="{item['id']}" onclick="toggleSaveResearch(this, '{item['id']}', '{escaped_title}', '{item['link']}')">☆</button><div class="result-title">{item['title']}</div><div class="result-citation">Citation Reference: ({item['author_year']})</div><div class="result-snippet"><strong>Ready-to-Use RRL Snippet:</strong><br>"{item['snippet']}"</div><a class="result-link" href="{item['link']}" target="_blank">View Verified Source Link</a></div>"""
+            else: results_html = "<p style='text-align: center; color: #666;'>No matching references found in the repository.</p>"
+            response_content = self.render_html_page(results_html, speed_metric, query_val=params["query"])
+        else: response_content = self.render_html_page()
+        self.wfile.write(response_content.encode("utf-8"))
+
+if __name__ == "__main__":
+    port_string = os.environ.get("PORT", "10000")
+    server = HTTPServer(("0.0.0.0", int(port_string)), LarixServer)
+    try: server.serve_forever()
+    except KeyboardInterrupt: server.server_close()
