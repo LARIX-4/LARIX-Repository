@@ -88,7 +88,7 @@ class LarixServer(BaseHTTPRequestHandler):
             window.addEventListener('DOMContentLoaded',()=>{ renderHistory(); renderSavedList(); });
         </script></body></html>
         """
-    def render_html_page(self, results_html="", speed_metric="", query_val=""):
+        def render_html_page(self, results_html="", speed_metric="", query_val=""):
         html_template = """<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>LARIX Repository</title>
     <style>
         body {{ font-family: Arial, sans-serif; background: linear-gradient(to bottom, #e8f5e9 0%, #ffffff 400px, #ffffff 100%); background-attachment: fixed; color: #1e392a; margin: 0; padding: 20px; }}
@@ -129,7 +129,8 @@ class LarixServer(BaseHTTPRequestHandler):
         <div style="font-size:15px; color:#555; font-style:italic; margin-bottom:30px; line-height:1.6;">
             Development of a Web-Based Literature Indexer<br>
             and Review of Related Literature Repository in<br>
-            Guisguis National High School (2026)
+            Guisguis National High School<br>
+            <span style="font-size:13px; color:#2e6f40; font-weight:bold;">Published in 2026</span>
         </div>
         <form id="searchForm" method="GET" action="/" style="display:flex; gap:10px; max-width:600px; margin:0 auto 20px auto;">
             <input type="text" name="query" id="searchInput" placeholder="Enter keyword" value="{query_val}" required><button type="submit">Search</button>
@@ -151,7 +152,7 @@ class LarixServer(BaseHTTPRequestHandler):
         self.send_response(200); self.send_header("Content-type", "text/html; charset=utf-8"); self.end_headers()
         query_val = ""; speed_metric = ""; results_html = ""
         if "query" in params and params["query"]:
-            user_query = params["query"].strip(); query_val = user_query.replace('"', '&quot;'); search_keyword = user_query.lower(); start_time = time.perf_counter(); matched_items = []
+            user_query = params["query"][0].strip(); query_val = user_query.replace('"', '&quot;'); search_keyword = user_query.lower(); start_time = time.perf_counter(); matched_items = []
             if os.path.exists(DB_FILE):
                 with open(DB_FILE, "r", encoding="utf-8") as f: database = json.load(f)
                 for index, entry in enumerate(database):
