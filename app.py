@@ -13,9 +13,9 @@ class LarixServer(BaseHTTPRequestHandler):
         <div id="aboutModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center;" onclick="closeAboutModalOutside(event)">
             <div class="modal-box" style="background: #ffffff; padding: 30px; border-radius: 8px; max-width: 600px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; margin: auto;">
                 <span class="close-btn" style="position: absolute; top: 15px; right: 20px; font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer;" onclick="closeAboutModal()">&times;</span>
-                <h2 style="color:#2e6f40;margin-top:0;text-align:center;font-size:24px;border-bottom:2px solid #2e6f40;padding-bottom:10px;">About Our Project Team</h2>
+                <h2 style="color:#2e6f40;margin-top:0;text-align:center;font-size:24px;border-bottom:2px solid #2e6f40;padding-bottom:10px;">About Our Project Team (2026)</h2>
                 <div class="group-photo-wrapper" style="text-align:center; margin-bottom:15px;">
-                    <img class="group-photo" src="/logo.png" alt="LARIX Group Photo" style="max-width:120px; height:auto;" onerror="this.style.display='none';">
+                    <img class="group-photo" src="/logo.png" alt="LARIX Group Photo" style="max-width:120px; height:120px; border-radius:50%; object-fit:cover;" onerror="this.style.display='none';">
                 </div>
                 <div class="modal-h2" style="color:#2e6f40; font-weight:bold; font-size:18px; margin-top:15px;">Vision</div>
                 <div class="mv-text" style="font-size:14px; line-height:1.5; margin-bottom:10px;">To be the leading school reference platform that provides clean, highly organized, and accurate literature resources to help high school students write their research papers with ease and confidence.</div>
@@ -45,7 +45,7 @@ class LarixServer(BaseHTTPRequestHandler):
                 </div>
             </div>
         </div>
-"""
+        """
     def get_application_script(self):
         return """
         <div id="pwaBanner" class="pwa-banner"><p class="pwa-text"><strong>LARIX Repository App</strong><br>Add to your homescreen for instant offline access.</p><button id="pwaInstallBtn" class="pwa-btn">Install</button></div>
@@ -99,6 +99,7 @@ class LarixServer(BaseHTTPRequestHandler):
         .sidebar-overlay {{ display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; }}
         .sidebar-h3 {{ color: #2e6f40; border-bottom: 2px solid #e8f5e9; padding-bottom: 5px; margin-top: 20px; font-size: 16px; font-weight: bold; }}
         .menu-link {{ display: block; background: #2e6f40; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; margin-bottom: 10px; font-size: 14px; }}
+        .main-logo {{ max-width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 3px solid #2e6f40; }}
         input[type="text"] {{ flex: 1; padding: 12px; border: 2px solid #2e6f40; border-radius: 4px; font-size: 16px; outline: none; }}
         button[type="submit"] {{ background-color: #2e6f40; color: white; border: none; padding: 12px 28px; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold; }}
         .metrics {{ background-color: #e8f5e9; padding: 12px; border-radius: 4px; color: #1e4b2b; font-weight: bold; max-width: 600px; margin: 0 auto 20px auto; font-size: 14px; border-left: 4px solid #2e6f40; }}
@@ -123,9 +124,13 @@ class LarixServer(BaseHTTPRequestHandler):
         <button onclick="clearData()" style="width:100%; background:#d32f2f; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer; font-weight:bold;">Clear Data</button>
     </div>
     <div class="container">
-        <div style="margin-bottom: 10px;"><img src="/logo.png" alt="LARIX Logo" style="max-width: 140px; height: auto;" onerror="this.src='https://placehold.co';"></div>
+        <div style="margin-bottom: 15px;"><img src="/logo.png" class="main-logo" alt="LARIX Logo" onerror="this.src='https://placehold.co';"></div>
         <h1 style="color:#2e6f40; margin-bottom:5px; font-size:36px; font-weight:bold;">LARIX</h1>
-        <div style="font-size:14px; color:#555; font-style:italic; margin-bottom:30px;">Literature Indexer and RRL Repository in Guisguis NHS</div>
+        <div style="font-size:15px; color:#555; font-style:italic; margin-bottom:30px; line-height:1.6;">
+            Development of a Web-Based Literature Indexer<br>
+            and Review of Related Literature Repository in<br>
+            Guisguis National High School (2026)
+        </div>
         <form id="searchForm" method="GET" action="/" style="display:flex; gap:10px; max-width:600px; margin:0 auto 20px auto;">
             <input type="text" name="query" id="searchInput" placeholder="Enter keyword" value="{query_val}" required><button type="submit">Search</button>
         </form>
@@ -146,7 +151,7 @@ class LarixServer(BaseHTTPRequestHandler):
         self.send_response(200); self.send_header("Content-type", "text/html; charset=utf-8"); self.end_headers()
         query_val = ""; speed_metric = ""; results_html = ""
         if "query" in params and params["query"]:
-            user_query = params["query"][0].strip(); query_val = user_query.replace('"', '&quot;'); search_keyword = user_query.lower(); start_time = time.perf_counter(); matched_items = []
+            user_query = params["query"].strip(); query_val = user_query.replace('"', '&quot;'); search_keyword = user_query.lower(); start_time = time.perf_counter(); matched_items = []
             if os.path.exists(DB_FILE):
                 with open(DB_FILE, "r", encoding="utf-8") as f: database = json.load(f)
                 for index, entry in enumerate(database):
