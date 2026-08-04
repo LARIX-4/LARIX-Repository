@@ -149,10 +149,9 @@ class LarixServer(BaseHTTPRequestHandler):
         </div>
         <h1 style="color:#2e6f40; margin-bottom:5px; font-size:36px; font-weight:bold; letter-spacing:1px;">LARIX</h1>
         <div style="font-size:15px; color:#555; font-style:italic; margin-bottom:30px; line-height:1.6;">
-            Development of a Web-Based Literature Indexer<br>
-            and Review of Related Literature Repository in<br>
+            Development of a Web-Based Literature Indexer and Review of Related Literature Repository in<br>
             Guisguis National High School<br>
-            <span style="font-size:13px; color:#2e6f40; font-weight:bold;">Published on/in 2026</span>
+            <span style="font-size:13px; color:#2e6f40; font-weight:bold;">Published in 2026</span>
         </div>
         
         <form id="searchForm" method="GET" action="/" style="display:flex; gap:10px; max-width:600px; margin:0 auto 20px auto;">
