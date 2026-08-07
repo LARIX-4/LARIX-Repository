@@ -177,39 +177,60 @@ class LarixServer(BaseHTTPRequestHandler):
             else:
                 self.send_response(404); self.end_headers(); return
 
-                parsed_url = urllib.parse.urlparse(self.path); params = urllib.parse.parse_qs(parsed_url.query)
+        parsed_url = urllib.parse.urlparse(self.path)
+        params = urllib.parse.parse_qs(parsed_url.query)
+        
         self.send_response(200); self.send_header("Content-type", "text/html; charset=utf-8"); self.end_headers()
-        u_q = params.get("query", [""]).strip().lower() if isinstance(params.get("query"), list) else params.get("query", "").strip().lower()
-        if not isinstance(u_q, str): u_q = params.get("query", [""]).strip().lower() if params.get("query") else ""
-        if u_q:
-            start_time = time.perf_counter(); m_i = []
+        
+        query_val = ""; speed_metric = ""; results_html = ""
+        
+        if "query" in params and params["query"]:
+            user_query = params["query"][0].strip()
+            query_val = user_query.replace('"', '&quot;')
+            search_keyword = user_query.lower()
+            start_time = time.perf_counter()
+            matched_items = []
+            
             if os.path.exists(DB_FILE):
                 with open(DB_FILE, "r", encoding="utf-8") as f: database = json.load(f)
                 for index, entry in enumerate(database):
-                    entry["id"] = f"doc_{index}"
-                    if u_q in entry.get("keyword", "") or u_q in entry.get("title", "").lower(): m_i.append(entry)
+                    entry_id = f"doc_{index}"
+                    keyword_field = entry.get("keyword", "")
+                    keyword_text = " ".join(keyword_field).lower() if isinstance(keyword_field, list) else str(keyword_field).lower()
+                    title_text = entry.get("title", "").lower()
+                    
+                    if search_keyword in keyword_text or search_keyword in title_text:
+                        entry["id"] = entry_id
+                        matched_items.append(entry)
+                        
             retrieval_speed = time.perf_counter() - start_time
-            speed_metric = f'<div class="metrics">LARIX Performance Metrics: Found {len(m_i)} result(s) in {retrieval_speed:.6f} seconds.</div>'
-            results_html = ""
-            if m_i:
-                for item in m_i:
+            speed_metric = f'<div class="metrics">LARIX Performance Metrics: Found {len(matched_items)} result(s) in {retrieval_speed:.6f} seconds.</div>'
+            
+            if matched_items:
+                for item in matched_items:
                     raw_title = item.get("title", "No Title"); escaped_title = raw_title.replace("'", "\\'").replace('"', '\\"')
-                    apa_citation = item.get("rrl_apa", "No APA citation available."); link_url = item.get("link", "#"); author_year = item.get("author_year", "N/A")
-                    abs_raw = item.get("abstract", "No abstract details recorded."); snip_raw = item.get("snippet", "No snippet available.")
+                    apa_citation = item.get("rrl_apa", "No APA citation available."); abstract_text = item.get("abstract", "No abstract details recorded.")
+                    snippet_text = item.get("snippet", "No snippet available."); link_url = item.get("link", "#"); author_year = item.get("author_year", "N/A")
                     
-                    # Safe text-clipping framework execution metrics
-                    if len(abs_raw) > 160: abs_layout = f'<span class="text-short">{abs_raw[:155]}...</span><span class="text-full" style="display:none;">{abs_raw}</span><button class="read-more-btn" onclick="toggleReadMore(this)">Read More...</button>'
-                    else: abs_layout = f'<span>{abs_raw}</span>'
-                    if len(snip_raw) > 160: snip_layout = f'<span class="text-short">"{snip_raw[:155]}..."</span><span class="text-full" style="display:none;">"{snip_raw}"</span><button class="read-more-btn" onclick="toggleReadMore(this)">Read More...</button>'
-                    else: snip_layout = f'<span>"{snip_raw}"</span>'
-                    
-                    results_html += f"""<div class="result-card"><button class="save-btn" data-id="{item['id']}" onclick="toggleSaveResearch(this, '{item['id']}', '{escaped_title}', '{link_url}')">&#9734;</button><div class="result-title">{raw_title}</div><div class="result-citation">Citation Reference: ({author_year})</div><div style="background:#f1f8e9; padding:10px; font-size:13px; border-radius:4px; margin:8px 0; border:1px dashed #2e6f40; color:#1e392a; text-align:left; line-height:1.4;"><strong>APA 7th Edition Citation:</strong><br>{apa_citation}</div><div style="font-size:14px; color:#555; margin:8px 0; line-height:1.4; text-align:justify;"><strong>Abstract:</strong> {abs_layout}</div><div class="result-snippet"><strong>Ready-to-Use RRL Snippet:</strong><br>{snip_layout}</div><a class="result-link" href="${{link_url}}" target="_blank">View Verified Source Link</a></div>"""
-            else: results_html = "<p style='text-align: center; color: #cc0000; font-weight: bold; background: #ffebee; padding: 15px; border-radius: 4px; border-left: 4px solid #cc0000; text-align: left; line-height: 1.4;'>No results found related to your keyword. Please try another term.</p>"
-            response_content = self.render_html_page(results_html, speed_metric, query_val=u_q)
-        else: response_content = self.render_html_page()
+                    results_html += f"""
+                    <div class="result-card">
+                        <button class="save-btn" data-id="{item['id']}" onclick="toggleSaveResearch(this, '{item['id']}', '{escaped_title}', '{link_url}')">☆</button>
+                        <div class="result-title">{raw_title}</div>
+                        <div class="result-citation">Citation Reference: ({author_year})<br>APA 7th Edition Citation: {apa_citation}</div>
+                        <div class="result-snippet"><strong>Abstract:</strong> {abstract_text}<br><br><strong>Ready-to-Use RRL Snippet:</strong><br>"{snippet_text}"</div>
+                        <a class="result-link" href="{link_url}" target="_blank">View Verified Source Link</a>
+                    </div>
+                    """
+            else: results_html = "<p>No results found related to your keyword. Please try another term.</p>"
+                
+        response_content = self.render_html_page(results_html, speed_metric, query_val=query_val)
         self.wfile.write(response_content.encode("utf-8"))
+
 if __name__ == "__main__":
     port_string = os.environ.get("PORT", "10000")
     server = HTTPServer(("0.0.0.0", int(port_string)), LarixServer)
-    try: server.serve_forever()
-    except KeyboardInterrupt: server.server_close()
+    print(f"LARIX Server running on port {port_string}...")
+    try: 
+        server.serve_forever()
+    except KeyboardInterrupt: 
+        server.server_close()
