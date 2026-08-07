@@ -206,22 +206,45 @@ class LarixServer(BaseHTTPRequestHandler):
             retrieval_speed = time.perf_counter() - start_time
             speed_metric = f'<div class="metrics">LARIX Performance Metrics: Found {len(matched_items)} result(s) in {retrieval_speed:.6f} seconds.</div>'
             
-            if matched_items:
+                        if matched_items:
                 for item in matched_items:
-                    raw_title = item.get("title", "No Title"); escaped_title = raw_title.replace("'", "\\'").replace('"', '\\"')
-                    apa_citation = item.get("rrl_apa", "No APA citation available."); abstract_text = item.get("abstract", "No abstract details recorded.")
-                    snippet_text = item.get("snippet", "No snippet available."); link_url = item.get("link", "#"); author_year = item.get("author_year", "N/A")
+                    raw_title = item.get("title", "No Title")
+                    escaped_title = raw_title.replace("'", "\\'").replace('"', '\\"')
+                    apa_citation = item.get("rrl_apa", "No APA citation available.")
+                    link_url = item.get("link", "#")
+                    author_year = item.get("author_year", "N/A")
+                    
+                    abs_raw = item.get("abstract", "No abstract details recorded.")
+                    snip_raw = item.get("snippet", "No snippet available.")
+                    
+                    # Core expansion mechanics - clipping lengths exceeding 160 characters
+                    if len(abs_raw) > 160:
+                        abs_layout = f'<span class="text-short">{abs_raw[:155]}...</span><span class="text-full" style="display:none;">{abs_raw}</span><button class="read-more-btn" onclick="toggleReadMore(this)">Read More...</button>'
+                    else:
+                        abs_layout = f'<span>{abs_raw}</span>'
+                        
+                    if len(snip_raw) > 160:
+                        snip_layout = f'<span class="text-short">"{snip_raw[:155]}..."</span><span class="text-full" style="display:none;">"{snip_raw}"</span><button class="read-more-btn" onclick="toggleReadMore(this)">Read More...</button>'
+                    else:
+                        snip_layout = f'<span>"{snip_raw}"</span>'
                     
                     results_html += f"""
                     <div class="result-card">
                         <button class="save-btn" data-id="{item['id']}" onclick="toggleSaveResearch(this, '{item['id']}', '{escaped_title}', '{link_url}')">☆</button>
                         <div class="result-title">{raw_title}</div>
-                        <div class="result-citation">Citation Reference: ({author_year})<br>APA 7th Edition Citation: {apa_citation}</div>
-                        <div class="result-snippet"><strong>Abstract:</strong> {abstract_text}<br><br><strong>Ready-to-Use RRL Snippet:</strong><br>"{snippet_text}"</div>
+                        <div class="result-citation">Citation Reference: ({author_year})</div>
+                        <div style="background:#f1f8e9; padding:10px; font-size:13px; border-radius:4px; margin:8px 0; border:1px dashed #2e6f40; color:#1e392a; text-align:left; line-height:1.4;">
+                            <strong>APA 7th Edition Citation:</strong><br>{apa_citation}
+                        </div>
+                        <div style="font-size:14px; color:#555; margin:8px 0; line-height:1.4; text-align:justify;">
+                            <strong>Abstract:</strong> {abs_layout}
+                        </div>
+                        <div class="result-snippet"><strong>Ready-to-Use RRL Snippet:</strong><br>{snip_layout}</div>
                         <a class="result-link" href="{link_url}" target="_blank">View Verified Source Link</a>
                     </div>
                     """
-            else: results_html = "<p>No results found related to your keyword. Please try another term.</p>"
+            else:
+                results_html = "<p style='text-align: center; color: #cc0000; font-weight: bold; background: #ffebee; padding: 15px; border-radius: 4px; border-left: 4px solid #cc0000; text-align: left; line-height: 1.4;'>No results found related to your keyword. Please try another term.</p>"
                 
         response_content = self.render_html_page(results_html, speed_metric, query_val=query_val)
         self.wfile.write(response_content.encode("utf-8"))
