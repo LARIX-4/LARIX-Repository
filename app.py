@@ -160,7 +160,7 @@ class LarixServer(BaseHTTPRequestHandler):
     </div>"""
         return html_top + self.get_about_and_script() + self.get_team_and_scripts()
 
-    def do_GET(self):
+        def do_GET(self):
         if self.path == "/logo.png":
             if os.path.exists("logo.png"):
                 self.send_response(200); self.send_header("Content-type", "image/png"); self.end_headers()
@@ -168,65 +168,38 @@ class LarixServer(BaseHTTPRequestHandler):
                 return
         parsed_url = urllib.parse.urlparse(self.path); params = urllib.parse.parse_qs(parsed_url.query)
         self.send_response(200); self.send_header("Content-type", "text/html; charset=utf-8"); self.end_headers()
-        u_q = params.get("query", [""]).strip().lower()
+        u_q = params.get("query", [""]).strip().lower() if isinstance(params.get("query"), list) else params.get("query", "").strip().lower()
+        if not isinstance(u_q, str): u_q = params.get("query", [""]).strip().lower() if params.get("query") else ""
         if u_q:
-            start_time = time.perf_counter(); matched_items = []
+            start_time = time.perf_counter(); m_i = []
             if os.path.exists(DB_FILE):
                 with open(DB_FILE, "r", encoding="utf-8") as f: database = json.load(f)
                 for index, entry in enumerate(database):
                     entry["id"] = f"doc_{index}"
-                    if u_q in entry.get("keyword", "") or u_q in entry.get("title", "").lower(): matched_items.append(entry)
+                    if u_q in entry.get("keyword", "") or u_q in entry.get("title", "").lower(): m_i.append(entry)
             retrieval_speed = time.perf_counter() - start_time
-            speed_metric = f'<div class="metrics">LARIX Performance Metrics: Found {len(matched_items)} result(s) in {retrieval_speed:.6f} seconds.</div>'
+            speed_metric = f'<div class="metrics">LARIX Performance Metrics: Found {len(m_i)} result(s) in {retrieval_speed:.6f} seconds.</div>'
             results_html = ""
-            if matched_items:
-                for item in matched_items:
-                    raw_title = item.get("title", "No Title")
-                    escaped_title = raw_title.replace("'", "\\'").replace('"', '\\"')
-                    apa_citation = item.get("rrl_apa", "No APA citation available.")
-                    link_url = item.get("link", "#")
-                    author_year = item.get("author_year", "N/A")
+            if m_i:
+                for item in m_i:
+                    raw_title = item.get("title", "No Title"); escaped_title = raw_title.replace("'", "\\'").replace('"', '\\"')
+                    apa_citation = item.get("rrl_apa", "No APA citation available."); link_url = item.get("link", "#"); author_year = item.get("author_year", "N/A")
+                    abs_raw = item.get("abstract", "No abstract details recorded."); snip_raw = item.get("snippet", "No snippet available.")
+                    if len(abs_raw) > 160: abs_layout = f'<span class="text-short">{abs_raw[:155]}...</span><span class="text-full" style="display:none;">{abs_raw}</span><button class="read-more-btn" onclick="toggleReadMore(this)">Read More...</button>'
+                    else: abs_layout = f'<span>{abs_raw}</span>'
+                    if len(snip_raw) > 160: snip_layout = f'<span class="text-short">"{snip_raw[:155]}..."</span><span class="text-full" style="display:none;">"{snip_raw}"</span><button class="read-more-btn" onclick="toggleReadMore(this)">Read More...</button>'
+                    else: snip_layout = f'<span>"{snip_raw}"</span>'
                     
-                    abs_raw = item.get("abstract", "No abstract details recorded.")
-                    snip_raw = item.get("snippet", "No snippet available.")
-                    
-                    # Core expansion mechanics - clipping lengths exceeding 160 characters
-                    if len(abs_raw) > 160:
-                        abs_layout = f'<span class="text-short">{abs_raw[:155]}...</span><span class="text-full" style="display:none;">{abs_raw}</span><button class="read-more-btn" onclick="toggleReadMore(this)">Read More...</button>'
-                    else:
-                        abs_layout = f'<span>{abs_raw}</span>'
-                        
-                    if len(snip_raw) > 160:
-                        snip_layout = f'<span class="text-short">"{snip_raw[:155]}..."</span><span class="text-full" style="display:none;">"{snip_raw}"</span><button class="read-more-btn" onclick="toggleReadMore(this)">Read More...</button>'
-                    else:
-                        snip_layout = f'<span>"{snip_raw}"</span>'
-                    
-                    results_html += f"""
-                    <div class="result-card">
-                        <button class="save-btn" data-id="{item['id']}" onclick="toggleSaveResearch(this, '{item['id']}', '{escaped_title}', '{link_url}')">☆</button>
-                        <div class="result-title">{raw_title}</div>
-                        <div class="result-citation">Citation Reference: ({author_year})</div>
-                        <div style="background:#f1f8e9; padding:10px; font-size:13px; border-radius:4px; margin:8px 0; border:1px dashed #2e6f40; color:#1e392a; text-align:left; line-height:1.4;">
-                            <strong>APA 7th Edition Citation:</strong><br>{apa_citation}
-                        </div>
-                        <div style="font-size:14px; color:#555; margin:8px 0; line-height:1.4; text-align:justify;">
-                            <strong>Abstract:</strong> {abs_layout}
-                        </div>
-                        <div style="font-size:14px; background-color:#fafafa; border-left:4px solid #2e6f40; padding:12px; margin:10px 0; line-height:1.5; color:#111;"><strong>Ready-to-Use RRL Snippet:</strong><br>{snip_layout}</div>
-                        <a class="result-link" href="{link_url}" target="_blank">View Verified Source Link</a>
-                    </div>
-                    """
-            else:
-                results_html = "<p style='text-align: center; color: #cc0000; font-weight: bold; background: #ffebee; padding: 15px; border-radius: 4px; border-left: 4px solid #cc0000; text-align: left; line-height: 1.4;'>No results found related to your keyword. Please try another term.</p>"
+                    results_html += f"""<div class="result-card"><button class="save-btn" data-id="{item['id']}" onclick="toggleSaveResearch(this, '{item['id']}', '{escaped_title}', '{link_url}')">&#9734;</button><div class="result-title">{raw_title}</div><div class="result-citation">Citation Reference: ({author_year})</div><div style="background:#f1f8e9; padding:10px; font-size:13px; border-radius:4px; margin:8px 0; border:1px dashed #2e6f40; color:#1e392a; text-align:left; line-height:1.4;"><strong>APA 7th Edition Citation:</strong><br>{apa_citation}</div><div style="font-size:14px; color:#555; margin:8px 0; line-height:1.4; text-align:justify;"><strong>Abstract:</strong> {abs_layout}</div><div class="result-snippet"><strong>Ready-to-Use RRL Snippet:</strong><br>{snip_layout}</div><a class="result-link" href="{link_url}" target="_blank">View Verified Source Link</a></div>"""
+            else: results_html = "<p style='text-align: center; color: #cc0000; font-weight: bold; background: #ffebee; padding: 15px; border-radius: 4px; border-left: 4px solid #cc0000; text-align: left; line-height: 1.4;'>No results found related to your keyword. Please try another term.</p>"
             response_content = self.render_html_page(results_html, speed_metric, query_val=u_q)
-        else:
-            response_content = self.render_html_page()
+        else: response_content = self.render_html_page()
         self.wfile.write(response_content.encode("utf-8"))
-
 if __name__ == "__main__":
     port_string = os.environ.get("PORT", "10000")
     server = HTTPServer(("0.0.0.0", int(port_string)), LarixServer)
     try: server.serve_forever()
     except KeyboardInterrupt: server.server_close()
+
 
 
