@@ -153,7 +153,7 @@ class LarixServer(BaseHTTPRequestHandler):
             <span style="font-size:13px; color:#2e6f40; font-weight:bold;">Published in 2026</span>
         </div>
          <form id="searchForm" method="GET" action="/" style="display:flex; gap:10px; max-width:600px; margin:0 auto 20px auto;">
-            <input type="text" name="query" id="searchInput" placeholder="Enter keyword" value='""" + q_clean + """' required>
+            <input type="text" name="query" id="searchInput" placeholder="Enter keyword" value="""" + query_val + """ required>
             <button type="submit">Search</button>
         </form>
         <div class="results-wrapper">""" + speed_metric + " " + results_html + """</div>
