@@ -168,7 +168,7 @@ class LarixServer(BaseHTTPRequestHandler):
 """
         return html_template.format(query_val=query_val, speed_metric=speed_metric, results_html=results_html) + self.get_about_and_script() + self.get_application_script()
 
-        def do_GET(self):
+            def do_GET(self):
         if self.path == "/logo.png":
             if os.path.exists("logo.png"):
                 self.send_response(200); self.send_header("Content-type", "image/png"); self.end_headers()
@@ -220,7 +220,7 @@ class LarixServer(BaseHTTPRequestHandler):
                         <div style="font-size:14px; color:#555; margin:8px 0; line-height:1.4; text-align:justify;">
                             <strong>Abstract:</strong> {abs_layout}
                         </div>
-                        <div class="result-wrapper"><strong>Ready-to-Use RRL Snippet:</strong><br>{snip_layout}</div>
+                        <div style="font-size:14px; background-color:#fafafa; border-left:4px solid #2e6f40; padding:12px; margin:10px 0; line-height:1.5; color:#111;"><strong>Ready-to-Use RRL Snippet:</strong><br>{snip_layout}</div>
                         <a class="result-link" href="{link_url}" target="_blank">View Verified Source Link</a>
                     </div>
                     """
@@ -236,4 +236,5 @@ if __name__ == "__main__":
     server = HTTPServer(("0.0.0.0", int(port_string)), LarixServer)
     try: server.serve_forever()
     except KeyboardInterrupt: server.server_close()
+
 
