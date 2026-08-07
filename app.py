@@ -168,7 +168,7 @@ class LarixServer(BaseHTTPRequestHandler):
 """
         return html_template.format(query_val=query_val, speed_metric=speed_metric, results_html=results_html) + self.get_about_and_script() + self.get_application_script()
 
-            def do_GET(self):
+    def do_GET(self):
         if self.path == "/logo.png":
             if os.path.exists("logo.png"):
                 self.send_response(200); self.send_header("Content-type", "image/png"); self.end_headers()
