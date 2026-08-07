@@ -168,45 +168,26 @@ class LarixServer(BaseHTTPRequestHandler):
 """
         return html_template.format(query_val=query_val, speed_metric=speed_metric, results_html=results_html) + self.get_about_and_script() + self.get_application_script()
 
-    def do_GET(self):
+        def do_GET(self):
         if self.path == "/logo.png":
             if os.path.exists("logo.png"):
                 self.send_response(200); self.send_header("Content-type", "image/png"); self.end_headers()
                 with open("logo.png", "rb") as f: self.wfile.write(f.read())
                 return
-            else:
-                self.send_response(404); self.end_headers(); return
-
-        parsed_url = urllib.parse.urlparse(self.path)
-        params = urllib.parse.parse_qs(parsed_url.query)
-        
+        parsed_url = urllib.parse.urlparse(self.path); params = urllib.parse.parse_qs(parsed_url.query)
         self.send_response(200); self.send_header("Content-type", "text/html; charset=utf-8"); self.end_headers()
-        
-        query_val = ""; speed_metric = ""; results_html = ""
-        
-        if "query" in params and params["query"]:
-            user_query = params["query"][0].strip()
-            query_val = user_query.replace('"', '&quot;')
-            search_keyword = user_query.lower()
-            start_time = time.perf_counter()
-            matched_items = []
-            
+        u_q = params.get("query", [""]).strip().lower()
+        if u_q:
+            start_time = time.perf_counter(); matched_items = []
             if os.path.exists(DB_FILE):
                 with open(DB_FILE, "r", encoding="utf-8") as f: database = json.load(f)
                 for index, entry in enumerate(database):
-                    entry_id = f"doc_{index}"
-                    keyword_field = entry.get("keyword", "")
-                    keyword_text = " ".join(keyword_field).lower() if isinstance(keyword_field, list) else str(keyword_field).lower()
-                    title_text = entry.get("title", "").lower()
-                    
-                    if search_keyword in keyword_text or search_keyword in title_text:
-                        entry["id"] = entry_id
-                        matched_items.append(entry)
-                        
+                    entry["id"] = f"doc_{index}"
+                    if u_q in entry.get("keyword", "") or u_q in entry.get("title", "").lower(): matched_items.append(entry)
             retrieval_speed = time.perf_counter() - start_time
             speed_metric = f'<div class="metrics">LARIX Performance Metrics: Found {len(matched_items)} result(s) in {retrieval_speed:.6f} seconds.</div>'
-            
-                        if matched_items:
+            results_html = ""
+            if matched_items:
                 for item in matched_items:
                     raw_title = item.get("title", "No Title")
                     escaped_title = raw_title.replace("'", "\\'").replace('"', '\\"')
@@ -239,21 +220,20 @@ class LarixServer(BaseHTTPRequestHandler):
                         <div style="font-size:14px; color:#555; margin:8px 0; line-height:1.4; text-align:justify;">
                             <strong>Abstract:</strong> {abs_layout}
                         </div>
-                        <div class="result-snippet"><strong>Ready-to-Use RRL Snippet:</strong><br>{snip_layout}</div>
+                        <div class="result-wrapper"><strong>Ready-to-Use RRL Snippet:</strong><br>{snip_layout}</div>
                         <a class="result-link" href="{link_url}" target="_blank">View Verified Source Link</a>
                     </div>
                     """
             else:
                 results_html = "<p style='text-align: center; color: #cc0000; font-weight: bold; background: #ffebee; padding: 15px; border-radius: 4px; border-left: 4px solid #cc0000; text-align: left; line-height: 1.4;'>No results found related to your keyword. Please try another term.</p>"
-                
-        response_content = self.render_html_page(results_html, speed_metric, query_val=query_val)
+            response_content = self.render_html_page(results_html, speed_metric, query_val=u_q)
+        else:
+            response_content = self.render_html_page()
         self.wfile.write(response_content.encode("utf-8"))
 
 if __name__ == "__main__":
     port_string = os.environ.get("PORT", "10000")
     server = HTTPServer(("0.0.0.0", int(port_string)), LarixServer)
-    print(f"LARIX Server running on port {port_string}...")
-    try: 
-        server.serve_forever()
-    except KeyboardInterrupt: 
-        server.server_close()
+    try: server.serve_forever()
+    except KeyboardInterrupt: server.server_close()
+
