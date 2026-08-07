@@ -98,7 +98,7 @@ class LarixServer(BaseHTTPRequestHandler):
             window.addEventListener('DOMContentLoaded',()=>{ renderHistory(); renderSavedList(); });
         </script></body></html>
         """
-        def render_html_page(self, results_html="", speed_metric="", query_val=""):
+    def render_html_page(self, results_html="", speed_metric="", query_val=""):
         q_clean = query_val.replace('"', '&quot;').strip()
         html_top = """<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>LARIX Repository | Guisguis NHS</title>
     <style>
